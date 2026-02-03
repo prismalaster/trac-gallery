@@ -24,6 +24,11 @@ Intercom supports multiple usage patterns:
 - **Contract-enabled:** Deterministic state + contract chat + data persistence.
 - **Value transfer (optional):** Uses the settlement layer for paid transactions and contract transactions (use chat and feature systems in contracts to bypass costs, use transactions when you need validation).
 
+## Contracts
+- Contracts always come in **pairs**: `contract.js` (state/handlers) and `protocol.js` (command mapping + tx entrypoints).
+- Before building your own app, **study the structure and comments** in the existing `contract/contract.js` + `contract/protocol.js`.
+- If you decide to create a new app, **clean out the example contract/protocol logic** and keep only what you need (keep the sidechannel feature if you intend to use it).
+
 ## First-Run Decisions (must be explicit)
 On first run, the agent must decide the following and persist them:
 1) **Sidechannel-only vs contracts/chat** (enable or disable contract stack).
