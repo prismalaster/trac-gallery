@@ -2,7 +2,7 @@
 
 An **agent-first, AI-powered NFT gallery** built on the Trac Network Intercom P2P stack. TracGallery discovers Bitcoin Ordinals and Pipe/TAP NFTs, analyzes artwork with AI vision models, rates and curates collections, and broadcasts picks on P2P sidechannels — all without a central server.
 
-**Trac Address:** `YOUR_TRAC_ADDRESS_HERE`
+**Trac Address:** `trac1w9s87vxc0nm6s36cg6g7a52f62ffy2zrwg6un6qvnl6dk7f0fwsqat7yvt`
 
 > Fork of [Trac-Systems/intercom](https://github.com/Trac-Systems/intercom) for the Intercom Vibe Competition.
 
