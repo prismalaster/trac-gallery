@@ -14,8 +14,23 @@ import SampleContract from './contract/contract.js';
 import { Timer } from './features/timer/index.js';
 import Sidechannel from './features/sidechannel/index.js';
 import ScBridge from './features/sc-bridge/index.js';
+import { Gallery } from './features/gallery/index.js';
 
 const { env, storeLabel, flags } = getPearRuntime();
+
+// --- Load TracGallery config ---
+let galleryConfig = {};
+try {
+  const configPath = new URL('./config.json', import.meta.url).pathname;
+  if (fs.existsSync(configPath)) {
+    galleryConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    console.log('[tracgallery] config loaded (provider:', galleryConfig.ai_provider || 'anthropic', ')');
+  } else {
+    console.warn('[tracgallery] config.json not found. Copy config.example.json to config.json and add your API keys.');
+  }
+} catch (e) {
+  console.warn('[tracgallery] failed to load config.json:', e?.message ?? e);
+}
 
 const peerStoreNameRaw =
   (flags['peer-store-name'] && String(flags['peer-store-name'])) ||
@@ -246,10 +261,14 @@ const sidechannelWelcomeRequiredRaw =
 const sidechannelWelcomeRequired = parseBool(sidechannelWelcomeRequiredRaw, true);
 
 const sidechannelEntry = '0000intercom';
-const sidechannelExtras = sidechannelsRaw
-  .split(',')
-  .map((value) => value.trim())
-  .filter((value) => value.length > 0 && value !== sidechannelEntry);
+const galleryChannel = '0000tracgallery';
+const sidechannelExtras = [
+  galleryChannel,
+  ...sidechannelsRaw
+    .split(',')
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0 && value !== '0000intercom' && value !== galleryChannel),
+];
 
 if (sidechannelWelcomeRequired && !sidechannelOwnerMap.has(sidechannelEntry)) {
   console.warn(
@@ -452,6 +471,15 @@ if (admin && admin.value === peer.wallet.publicKey && peer.base.writable) {
   timer.start().catch((err) => console.error('Timer feature stopped:', err?.message ?? err));
 }
 
+// --- TracGallery Feature ---
+const galleryStoreDir = path.join(peerStoresDirectory, peerStoreNameRaw, 'tracgallery');
+const gallery = new Gallery(peer, {
+  config: galleryConfig,
+  galleryChannel,
+  storeDir: galleryStoreDir,
+});
+peer.gallery = gallery;
+
 let scBridge = null;
 if (scBridgeEnabled) {
   scBridge = new ScBridge(peer, {
@@ -524,6 +552,8 @@ sidechannel
   .start()
   .then(() => {
     console.log('Sidechannel: ready');
+    // Start gallery discovery loop after sidechannel is ready
+    gallery.start().catch((err) => console.error('[gallery] discovery loop error:', err?.message ?? err));
   })
   .catch((err) => {
     console.error('Sidechannel failed to start:', err?.message ?? err);

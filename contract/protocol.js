@@ -212,19 +212,23 @@ class SampleProtocol extends Protocol{
      */
     async printOptions(){
         console.log(' ');
-        console.log('- Sample Commands:');
-        console.log("- /print | use this flag to print some text to the terminal: '--text \"I am printing\"");
-        console.log('- /get --key "<key>" [--confirmed true|false] | reads subnet state key (confirmed defaults to true).');
-        console.log('- /msb | prints MSB txv + lengths (local MSB node view).');
-        console.log('- /tx --command "read_chat_last" | prints last chat message captured by contract.');
-        console.log('- /tx --command "read_timer" | prints current timer feature value.');
-        console.log('- /sc_join --channel "<name>" | join an ephemeral sidechannel (no autobase).');
-        console.log('- /sc_open --channel "<name>" [--via "<channel>"] [--invite <json|b64|@file>] [--welcome <json|b64|@file>] | request others to open a sidechannel.');
-        console.log('- /sc_send --channel "<name>" --message "<text>" [--invite <json|b64|@file>] | send message over sidechannel.');
-        console.log('- /sc_invite --channel "<name>" --pubkey "<peer-pubkey-hex>" [--ttl <sec>] [--welcome <json|b64|@file>] | create a signed invite.');
-        console.log('- /sc_welcome --channel "<name>" --text "<message>" | create a signed welcome.');
-        console.log('- /sc_stats | show sidechannel channels + connection count.');
-        // further protocol specific options go here
+        console.log('- Intercom Commands:');
+        console.log("- /print | print text to terminal: '--text \"I am printing\"");
+        console.log('- /get --key "<key>" [--confirmed true|false] | reads subnet state key.');
+        console.log('- /msb | prints MSB txv + lengths.');
+        console.log('- /sc_join --channel "<name>" | join a sidechannel.');
+        console.log('- /sc_send --channel "<name>" --message "<text>" | send sidechannel message.');
+        console.log('- /sc_open --channel "<name>" [--via "<channel>"] | request channel creation.');
+        console.log('- /sc_invite --channel "<name>" --pubkey "<hex>" [--ttl <sec>] | create invite.');
+        console.log('- /sc_welcome --channel "<name>" --text "<msg>" | create welcome.');
+        console.log('- /sc_stats | show sidechannel stats.');
+        console.log(' ');
+        console.log('- TracGallery Commands:');
+        console.log('- /tg_gallery [--limit N] [--chain ordinals|pipe] [--min-score N] [--style <style>] [--sort score|newest|oldest]');
+        console.log('- /tg_trending [--limit N] | top-rated curated NFTs.');
+        console.log('- /tg_rate --id "<inscription_id>" | rate an NFT with AI.');
+        console.log('- /tg_curate --theme "<theme>" | curate NFTs by theme.');
+        console.log('- /tg_status | gallery status and stats.');
     }
 
     /**
@@ -592,8 +596,50 @@ class SampleProtocol extends Protocol{
         if (this.input.startsWith("/print")) {
             const splitted = this.parseArgs(input);
             console.log(splitted.text);
+            return;
+        }
+        // --- TracGallery commands ---
+        if (this.input.startsWith("/tg_gallery")) {
+            if (!this.peer.gallery) { console.log('Gallery not initialized.'); return; }
+            const args = this.parseArgs(input);
+            const result = this.peer.gallery.handleGalleryCommand({
+                chain: args.chain, min_score: args['min-score'] || args.min_score,
+                style: args.style, sort: args.sort, limit: args.limit,
+            });
+            console.log(JSON.stringify(result, null, 2));
+            return;
+        }
+        if (this.input.startsWith("/tg_trending")) {
+            if (!this.peer.gallery) { console.log('Gallery not initialized.'); return; }
+            const args = this.parseArgs(input);
+            const result = this.peer.gallery.handleTrendingCommand({ limit: args.limit });
+            console.log(JSON.stringify(result, null, 2));
+            return;
+        }
+        if (this.input.startsWith("/tg_rate")) {
+            if (!this.peer.gallery) { console.log('Gallery not initialized.'); return; }
+            const args = this.parseArgs(input);
+            if (!args.id) { console.log('Usage: /tg_rate --id "<inscription_id>"'); return; }
+            const result = await this.peer.gallery.handleRateCommand({ id: args.id });
+            console.log(JSON.stringify(result, null, 2));
+            return;
+        }
+        if (this.input.startsWith("/tg_curate")) {
+            if (!this.peer.gallery) { console.log('Gallery not initialized.'); return; }
+            const args = this.parseArgs(input);
+            if (!args.theme) { console.log('Usage: /tg_curate --theme "<theme>"'); return; }
+            const result = await this.peer.gallery.handleCurateCommand({ theme: args.theme });
+            console.log(JSON.stringify(result, null, 2));
+            return;
+        }
+        if (this.input.startsWith("/tg_status")) {
+            if (!this.peer.gallery) { console.log('Gallery not initialized.'); return; }
+            const result = this.peer.gallery.handleStatusCommand();
+            console.log(JSON.stringify(result, null, 2));
+            return;
         }
     }
+
 }
 
 export default SampleProtocol;

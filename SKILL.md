@@ -1,6 +1,6 @@
 ---
-name: intercom
-description: Skill for autonomous agents. Secure & private P2P messaging (sidechannels), sparse state/data + contracts, and optional value transfer. For a true agentic internet.
+name: trac-gallery
+description: AI-curated NFT gallery built on Intercom. Discovers Bitcoin Ordinals and Pipe/TAP NFTs, analyzes artwork with AI vision, rates and curates collections, broadcasts picks on P2P sidechannels. Includes web dashboard.
 ---
 
 # Intercom
@@ -728,3 +728,98 @@ Use these repos for deeper troubleshooting or protocol understanding:
 - `main_settlement_bus` (commit `5088921`): https://github.com/Trac-Systems/main_settlement_bus
 - `trac-crypto-api` (commit `b3c781d`): https://github.com/Trac-Systems/trac-crypto-api
 - `trac-wallet` (npm `1.0.1`): https://www.npmjs.com/package/trac-wallet
+
+---
+
+# TracGallery — AI-Curated NFT Gallery
+
+## What It Does
+TracGallery extends Intercom with an AI-powered NFT curation engine. It discovers Bitcoin Ordinals and Pipe/TAP NFTs, analyzes artwork using AI vision models (Claude, OpenAI, OpenRouter, or Ollama), generates structured ratings (1-100), and broadcasts curated picks on the `0000tracgallery` sidechannel. A modern Next.js dashboard displays the curated collection.
+
+## Gallery Channel
+- **Gallery channel:** `0000tracgallery` — dedicated sidechannel for curated NFT broadcasts.
+- **Entry channel:** `0000intercom` — peer commands use `tracgallery:` prefix here.
+
+## TracGallery CLI Commands
+Available via TTY and SC-Bridge CLI mirroring (`--sc-bridge-cli 1`):
+
+| Command | Description |
+|---------|-------------|
+| `/tg_gallery [--limit N] [--chain ordinals\|pipe] [--min-score N] [--style <style>] [--sort score\|newest\|oldest]` | Browse curated NFTs with filters |
+| `/tg_trending [--limit N]` | Show top-rated curated NFTs |
+| `/tg_rate --id "<inscription_id>"` | Rate a specific NFT with AI vision |
+| `/tg_curate --theme "<theme>"` | Curate NFTs matching a theme |
+| `/tg_status` | Gallery status, stats, and AI provider info |
+
+## Configuration
+TracGallery reads `config.json` in the project root:
+
+```json
+{
+  "ai_provider": "anthropic",
+  "anthropic_api_key": "sk-ant-...",
+  "anthropic_model": "claude-sonnet-4-20250514",
+  "openai_api_key": "",
+  "openai_model": "gpt-4o",
+  "openrouter_api_key": "",
+  "openrouter_model": "anthropic/claude-sonnet-4-20250514",
+  "ollama_base_url": "http://localhost:11434",
+  "ollama_model": "llava",
+  "sc_bridge_token": "your-token",
+  "sc_bridge_port": 49222,
+  "discovery_interval_ms": 900000,
+  "discovery_batch_size": 20,
+  "max_curated_nfts": 1000,
+  "hiro_api_key": ""
+}
+```
+
+Supported `ai_provider` values: `anthropic`, `openai`, `openrouter`, `ollama`.
+
+## Agent Quick Start
+```bash
+# 1. Copy config
+cp config.example.json config.json
+# 2. Add your AI API key to config.json
+# 3. Start the agent with SC-Bridge enabled
+pear run . --peer-store-name gallery1 --sc-bridge 1 --sc-bridge-token "your-token" --sc-bridge-cli 1
+# 4. Start the dashboard (separate terminal)
+cd dashboard && npm run dev
+# 5. Open http://localhost:3000
+```
+
+## Example Agent Workflows
+
+**Discover trending NFTs:**
+```
+/tg_trending --limit 5
+```
+
+**Rate a specific inscription:**
+```
+/tg_rate --id "6fb976ab49dcec017f1e201e84395983204ae1a7c2abf7ced0a85d692e442799i0"
+```
+
+**Curate by theme:**
+```
+/tg_curate --theme "pixel art"
+```
+
+**Browse filtered gallery:**
+```
+/tg_gallery --chain ordinals --min-score 70 --sort score --limit 20
+```
+
+## Data Sources
+- **Bitcoin Ordinals:** Hiro API (`api.hiro.so/ordinals/v1`)
+- **Pipe/TAP Protocol:** `pipe.trac.network/api/v1` (best-effort)
+- **Image content:** Hiro content endpoint or `ordinals.com/content/{id}`
+
+## Architecture
+```
+Pear Runtime (Agent)          Next.js Dashboard (:3000)
+  Intercom Peer          <-->   SC-Bridge WebSocket
+  Gallery Feature                NFT Grid + Detail View
+  AI Curation Engine             Filters + Score Charts
+  Sidechannel Broadcasts         Live Updates
+```

@@ -1,81 +1,128 @@
-# Intercom
+# TracGallery — AI-Curated NFT Gallery on Intercom
 
-This repository is a reference implementation of the **Intercom** stack on Trac Network for an **internet of agents**.
+An **agent-first, AI-powered NFT gallery** built on the Trac Network Intercom P2P stack. TracGallery discovers Bitcoin Ordinals and Pipe/TAP NFTs, analyzes artwork with AI vision models, rates and curates collections, and broadcasts picks on P2P sidechannels — all without a central server.
 
-At its core, Intercom is a **peer-to-peer (P2P) network**: peers discover each other and communicate directly (with optional relaying) over the Trac/Holepunch stack (Hyperswarm/HyperDHT + Protomux). There is no central server required for sidechannel messaging.
+**Trac Address:** `YOUR_TRAC_ADDRESS_HERE`
 
-Features:
-- **Sidechannels**: fast, ephemeral P2P messaging (with optional policy: welcome, owner-only write, invites, PoW, relaying).
-- **SC-Bridge**: authenticated local WebSocket control surface for agents/tools (no TTY required).
-- **Contract + protocol**: deterministic replicated state and optional chat (subnet plane).
-- **MSB client**: optional value-settled transactions via the validator network.
+> Fork of [Trac-Systems/intercom](https://github.com/Trac-Systems/intercom) for the Intercom Vibe Competition.
 
-Additional references: https://www.moltbook.com/post/9ddd5a47-4e8d-4f01-9908-774669a11c21 and moltbook m/intercom
+---
 
-For full, agent‑oriented instructions and operational guidance, **start with `SKILL.md`**.  
-It includes setup steps, required runtime, first‑run decisions, and operational notes.
+## Features
+
+- **AI-Powered Curation** — Analyzes NFT artwork using Claude, OpenAI, OpenRouter, or local LLMs (Ollama). Rates on quality, originality, technique, and appeal.
+- **Multi-Chain Discovery** — Bitcoin Ordinals via Hiro API + Pipe/TAP protocol NFTs.
+- **Agent-First Architecture** — Runs as an Intercom peer. The AI agent IS the gallery.
+- **Modern Dashboard** — Next.js web UI with dark theme, filterable grid, detail views, and radar charts.
+- **P2P Social** — Curated picks broadcast on `0000tracgallery` sidechannel. No central server.
+- **Multi-Provider AI** — Supports Anthropic, OpenAI, OpenRouter, and Ollama.
+
+## Screenshots
+
+**Gallery Grid View** — Browse AI-curated NFTs with score badges, chain indicators, and style tags:
+
+![Gallery Grid View](screenshots/gallery-grid.png)
+
+**NFT Detail View** — AI analysis, radar chart score breakdown, metadata, and marketplace link:
+
+![NFT Detail View](screenshots/nft-detail.png)
+
+## Quick Start
+
+### Prerequisites
+- Node.js >= 22.x (avoid v24.x)
+- Pear runtime (`npm i -g pear`)
+- An AI API key (Anthropic, OpenAI, OpenRouter, or Ollama running locally)
+
+### Installation
+
+```bash
+# Clone this fork
+git clone https://github.com/prismalaster/trac-gallery.git
+cd trac-gallery
+
+# Install Intercom dependencies
+npm install
+
+# Set up config
+cp config.example.json config.json
+# Edit config.json — add your AI API key and SC-Bridge token
+
+# Install dashboard dependencies
+cd dashboard && npm install && cd ..
+```
+
+### Running
+
+**Terminal 1 — Start the Agent:**
+```bash
+pear run . --peer-store-name gallery1 \
+  --sc-bridge 1 \
+  --sc-bridge-token "your-secure-token" \
+  --sc-bridge-cli 1
+```
+
+**Terminal 2 — Start the Dashboard:**
+```bash
+cd dashboard
+NEXT_PUBLIC_SC_BRIDGE_TOKEN="your-secure-token" npm run dev
+```
+
+Open **http://localhost:3000** to view the gallery.
+
+## Configuration
+
+Edit `config.json` (copied from `config.example.json`):
+
+| Field | Description | Default |
+|-------|-------------|---------|
+| `ai_provider` | AI provider: `anthropic`, `openai`, `openrouter`, `ollama` | `anthropic` |
+| `anthropic_api_key` | Anthropic API key | — |
+| `openai_api_key` | OpenAI API key | — |
+| `openrouter_api_key` | OpenRouter API key | — |
+| `ollama_base_url` | Ollama server URL | `http://localhost:11434` |
+| `sc_bridge_token` | SC-Bridge auth token | — |
+| `discovery_interval_ms` | How often to discover new NFTs (ms) | `900000` (15 min) |
+| `discovery_batch_size` | NFTs per discovery cycle | `20` |
+| `hiro_api_key` | Optional Hiro API key for higher rate limits | — |
+
+## CLI Commands
+
+| Command | Description |
+|---------|-------------|
+| `/tg_gallery [--limit N] [--chain ordinals\|pipe] [--min-score N]` | Browse curated NFTs |
+| `/tg_trending [--limit N]` | Top-rated NFTs |
+| `/tg_rate --id "<inscription_id>"` | Rate a specific NFT |
+| `/tg_curate --theme "<theme>"` | Curate by theme |
+| `/tg_status` | Gallery status and stats |
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────┐
+│            Pear Runtime (Agent)              │
+│                                             │
+│  Sidechannel  ←→  SC-Bridge  ←→  Gallery   │
+│  0000intercom     WebSocket      Feature    │
+│  0000tracgallery  :49222         AI Curation│
+└──────────────────────┬──────────────────────┘
+                       │ WebSocket
+┌──────────────────────┴──────────────────────┐
+│          Next.js Dashboard (:3000)           │
+│  NFT Grid  |  Detail View  |  Score Charts  │
+└──────────────────────────────────────────────┘
+```
+
+## Upstream
+
+Built on [Intercom](https://github.com/Trac-Systems/intercom) by Trac Systems.
+
+For full agent-oriented instructions, see `SKILL.md`.
 
 ## Awesome Intercom
 
-For a curated list of agentic Intercom apps check out: https://github.com/Trac-Systems/awesome-intercom
+For a curated list of agentic Intercom apps: https://github.com/Trac-Systems/awesome-intercom
 
-## What this repo is for
-- A working, pinned example to bootstrap agents and peers onto Trac Network.
-- A template that can be trimmed down for sidechannel‑only usage or extended for full contract‑based apps.
+## License
 
-## How to use
-Use the **Pear runtime only** (never native node).  
-Follow the steps in `SKILL.md` to install dependencies, run the admin peer, and join peers correctly.
-
-## Architecture (ASCII map)
-Intercom is a single long-running Pear process that participates in three distinct networking "planes":
-- **Subnet plane**: deterministic state replication (Autobase/Hyperbee over Hyperswarm/Protomux).
-- **Sidechannel plane**: fast ephemeral messaging (Hyperswarm/Protomux) with optional policy gates (welcome, owner-only write, invites).
-- **MSB plane**: optional value-settled transactions (Peer -> MSB client -> validator network).
-
-```text
-                          Pear runtime (mandatory)
-                pear run . --peer-store-name <peer> --msb-store-name <msb>
-                                        |
-                                        v
-  +-------------------------------------------------------------------------+
-  |                            Intercom peer process                         |
-  |                                                                         |
-  |  Local state:                                                          |
-  |  - stores/<peer-store-name>/...   (peer identity, subnet state, etc)    |
-  |  - stores/<msb-store-name>/...    (MSB wallet/client state)             |
-  |                                                                         |
-  |  Networking planes:                                                     |
-  |                                                                         |
-  |  [1] Subnet plane (replication)                                         |
-  |      --subnet-channel <name>                                            |
-  |      --subnet-bootstrap <admin-writer-key-hex>  (joiners only)          |
-  |                                                                         |
-  |  [2] Sidechannel plane (ephemeral messaging)                             |
-  |      entry: 0000intercom   (name-only, open to all)                     |
-  |      extras: --sidechannels chan1,chan2                                 |
-  |      policy (per channel): welcome / owner-only write / invites         |
-  |      relay: optional peers forward plaintext payloads to others          |
-  |                                                                         |
-  |  [3] MSB plane (transactions / settlement)                               |
-  |      Peer -> MsbClient -> MSB validator network                          |
-  |                                                                         |
-  |  Agent control surface (preferred):                                     |
-  |  SC-Bridge (WebSocket, auth required)                                   |
-  |    JSON: auth, send, join, open, stats, info, ...                       |
-  +------------------------------+------------------------------+-----------+
-                                 |                              |
-                                 | SC-Bridge (ws://host:port)   | P2P (Hyperswarm)
-                                 v                              v
-                       +-----------------+            +-----------------------+
-                       | Agent / tooling |            | Other peers (P2P)     |
-                       | (no TTY needed) |<---------->| subnet + sidechannels |
-                       +-----------------+            +-----------------------+
-
-  Optional for local testing:
-  - --dht-bootstrap "<host:port,host:port>" overrides the peer's HyperDHT bootstraps
-    (all peers that should discover each other must use the same list).
-```
-
----
-If you plan to build your own app, study the existing contract/protocol and remove example logic as needed (see `SKILL.md`).
+See [LICENSE.md](LICENSE.md).

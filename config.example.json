@@ -1,0 +1,17 @@
+{
+  "ai_provider": "anthropic",
+  "anthropic_api_key": "sk-ant-api03-YOUR-KEY-HERE",
+  "anthropic_model": "claude-sonnet-4-20250514",
+  "openai_api_key": "sk-YOUR-KEY-HERE",
+  "openai_model": "gpt-4o",
+  "openrouter_api_key": "sk-or-v1-YOUR-KEY-HERE",
+  "openrouter_model": "anthropic/claude-sonnet-4-20250514",
+  "ollama_base_url": "http://localhost:11434",
+  "ollama_model": "llava",
+  "sc_bridge_token": "your-secure-token-here",
+  "sc_bridge_port": 49222,
+  "discovery_interval_ms": 900000,
+  "discovery_batch_size": 20,
+  "max_curated_nfts": 1000,
+  "hiro_api_key": ""
+}

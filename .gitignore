@@ -1,2 +1,6 @@
 stores
 node_modules
+config.json
+dashboard/node_modules
+dashboard/.next
+.env
